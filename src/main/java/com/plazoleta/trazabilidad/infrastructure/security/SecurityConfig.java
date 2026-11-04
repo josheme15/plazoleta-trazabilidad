@@ -35,6 +35,9 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/traces").hasAnyRole("CLIENT", "EMPLOYEE")
                         // HU-17: el cliente consulta el historial de sus pedidos.
                         .requestMatchers(HttpMethod.GET, "/traces/orders/*").hasRole("CLIENT")
+                        // HU-18: el propietario consulta la eficiencia de los pedidos de su restaurante.
+                        .requestMatchers(HttpMethod.GET, "/traces/restaurants/*/orders",
+                                "/traces/restaurants/*/employees/ranking").hasRole("OWNER")
                         .anyRequest().authenticated())
                 .exceptionHandling(ex -> ex
                         .authenticationEntryPoint((request, response, e) ->

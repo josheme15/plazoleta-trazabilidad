@@ -1,7 +1,7 @@
 {
   "info": {
     "name": "Plazoleta - Trazabilidad",
-    "description": "Pruebas del microservicio plazoleta-trazabilidad (HU-17).\n\nRequiere levantados: usuarios ({{usuariosUrl}}), plazoleta ({{plazoletaUrl}}) y trazabilidad ({{baseUrl}}) con su MongoDB (docker compose up -d).\nOrden de ejecucion: 00 Preparacion -> 01 Consultar trazabilidad -> 02 Registrar cambio de estado (usar el Collection Runner).",
+    "description": "Pruebas del microservicio plazoleta-trazabilidad (HU-17 y HU-18).\n\nRequiere levantados: usuarios ({{usuariosUrl}}), plazoleta ({{plazoletaUrl}}) y trazabilidad ({{baseUrl}}) con su MongoDB (docker compose up -d).\nOrden de ejecucion: 00 Preparacion -> 01 Consultar trazabilidad -> 02 Registrar cambio de estado -> 03 HU-18 Eficiencia pedidos (usar el Collection Runner).",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "item": [
@@ -381,7 +381,8 @@
                 "type": "text/javascript",
                 "exec": [
                   "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
-                  "pm.collectionVariables.set(\"employeeToken\", pm.response.json().token);"
+                  "pm.collectionVariables.set(\"employeeToken\", pm.response.json().token);",
+                  "pm.collectionVariables.set(\"employeeId\", pm.response.json().userId);"
                 ]
               }
             }
@@ -587,6 +588,225 @@
                 "exec": [
                   "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
                   "pm.collectionVariables.set(\"otherClientToken\", pm.response.json().token);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "[HU-18] Crear segundo empleado del restaurante (201)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{usuariosUrl}}/users/employee",
+              "host": [
+                "{{usuariosUrl}}"
+              ],
+              "path": [
+                "users",
+                "employee"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{ownerToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"firstName\": \"Laura\",\n  \"lastName\": \"Gil\",\n  \"documentNumber\": \"{{employee2Document}}\",\n  \"phone\": \"+573134445566\",\n  \"email\": \"{{employee2Email}}\",\n  \"roleId\": 3,\n  \"password\": \"Clave123*\",\n  \"restaurantId\": {{restaurantId}}\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const unique = Date.now().toString();",
+                  "pm.collectionVariables.set(\"employee2Document\", unique.slice(-10));",
+                  "pm.collectionVariables.set(\"employee2Email\", \"empleado2_traz_\" + unique + \"@correo.com\");"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 201\", () => pm.response.to.have.status(201));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "[HU-18] Login segundo empleado (200)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{usuariosUrl}}/auth/login",
+              "host": [
+                "{{usuariosUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            },
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{employee2Email}}\",\n  \"password\": \"Clave123*\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                  "pm.collectionVariables.set(\"employee2Token\", pm.response.json().token);",
+                  "pm.collectionVariables.set(\"employee2Id\", pm.response.json().userId);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "[HU-18] Crear otro propietario (201)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{usuariosUrl}}/users/owner",
+              "host": [
+                "{{usuariosUrl}}"
+              ],
+              "path": [
+                "users",
+                "owner"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"firstName\": \"Marta\",\n  \"lastName\": \"Rios\",\n  \"documentNumber\": \"{{otherOwnerDocument}}\",\n  \"phone\": \"+573004445566\",\n  \"birthDate\": \"1990-07-01\",\n  \"email\": \"{{otherOwnerEmail}}\",\n  \"password\": \"Clave123*\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const unique = Date.now().toString();",
+                  "pm.collectionVariables.set(\"otherOwnerDocument\", unique.slice(-10));",
+                  "pm.collectionVariables.set(\"otherOwnerEmail\", \"otro_dueno_traz_\" + unique + \"@correo.com\");"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 201\", () => pm.response.to.have.status(201));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "[HU-18] Login otro propietario (200)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{usuariosUrl}}/auth/login",
+              "host": [
+                "{{usuariosUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            },
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{otherOwnerEmail}}\",\n  \"password\": \"Clave123*\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                  "pm.collectionVariables.set(\"otherOwnerToken\", pm.response.json().token);"
                 ]
               }
             }
@@ -1537,6 +1757,879 @@
           ]
         }
       ]
+    },
+    {
+      "name": "03 - HU-18 Eficiencia pedidos",
+      "description": "Solo PROPIETARIO del restaurante. GET /traces/restaurants/{id}/orders: inicio (el cliente hace el pedido), fin (se entrega) y duracion de cada pedido entregado. GET /traces/restaurants/{id}/employees/ranking: ranking de empleados por tiempo medio entre que un pedido inicia y se termina (1 = el mas rapido).\n\nLa preparacion registra dos pedidos completos (de PENDIENTE a ENTREGADO) con POST /traces, uno por cada empleado; el del primer empleado espera 3 segundos antes de entregarse, por eso tarda mas. El pedido real de la carpeta 00 sigue EN_PREPARACION, asi que no aparece (no ha terminado).",
+      "item": [
+        {
+          "name": "Preparacion: pedido A (primer empleado) - el cliente hace el pedido (201)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/traces",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "traces"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{clientToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"orderId\": {{efficiencyOrderA}},\n  \"clientId\": {{clientId}},\n  \"restaurantId\": {{restaurantId}},\n  \"employeeId\": null,\n  \"previousStatus\": null,\n  \"newStatus\": \"PENDIENTE\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.collectionVariables.set(\"efficiencyOrderA\", 800000000 + Math.floor(Math.random() * 99999999));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 201\", () => pm.response.to.have.status(201));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Preparacion: pedido A (primer empleado) - el empleado se lo asigna (201)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/traces",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "traces"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{employeeToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"orderId\": {{efficiencyOrderA}},\n  \"clientId\": {{clientId}},\n  \"restaurantId\": {{restaurantId}},\n  \"employeeId\": {{employeeId}},\n  \"previousStatus\": \"PENDIENTE\",\n  \"newStatus\": \"EN_PREPARACION\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 201\", () => pm.response.to.have.status(201));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Preparacion: pedido A (primer empleado) - pedido listo (201)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/traces",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "traces"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{employeeToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"orderId\": {{efficiencyOrderA}},\n  \"clientId\": {{clientId}},\n  \"restaurantId\": {{restaurantId}},\n  \"employeeId\": {{employeeId}},\n  \"previousStatus\": \"EN_PREPARACION\",\n  \"newStatus\": \"LISTO\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 201\", () => pm.response.to.have.status(201));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Preparacion: pedido A (primer empleado) - pedido entregado (201)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/traces",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "traces"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{employeeToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"orderId\": {{efficiencyOrderA}},\n  \"clientId\": {{clientId}},\n  \"restaurantId\": {{restaurantId}},\n  \"employeeId\": {{employeeId}},\n  \"previousStatus\": \"LISTO\",\n  \"newStatus\": \"ENTREGADO\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// Espera para que este pedido tarde mas que el otro.",
+                  "setTimeout(() => {}, 3000);"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 201\", () => pm.response.to.have.status(201));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Preparacion: pedido B (segundo empleado) - el cliente hace el pedido (201)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/traces",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "traces"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{clientToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"orderId\": {{efficiencyOrderB}},\n  \"clientId\": {{clientId}},\n  \"restaurantId\": {{restaurantId}},\n  \"employeeId\": null,\n  \"previousStatus\": null,\n  \"newStatus\": \"PENDIENTE\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.collectionVariables.set(\"efficiencyOrderB\", 800000000 + Math.floor(Math.random() * 99999999));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 201\", () => pm.response.to.have.status(201));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Preparacion: pedido B (segundo empleado) - el empleado se lo asigna (201)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/traces",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "traces"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{employee2Token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"orderId\": {{efficiencyOrderB}},\n  \"clientId\": {{clientId}},\n  \"restaurantId\": {{restaurantId}},\n  \"employeeId\": {{employee2Id}},\n  \"previousStatus\": \"PENDIENTE\",\n  \"newStatus\": \"EN_PREPARACION\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 201\", () => pm.response.to.have.status(201));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Preparacion: pedido B (segundo empleado) - pedido listo (201)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/traces",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "traces"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{employee2Token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"orderId\": {{efficiencyOrderB}},\n  \"clientId\": {{clientId}},\n  \"restaurantId\": {{restaurantId}},\n  \"employeeId\": {{employee2Id}},\n  \"previousStatus\": \"EN_PREPARACION\",\n  \"newStatus\": \"LISTO\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 201\", () => pm.response.to.have.status(201));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Preparacion: pedido B (segundo empleado) - pedido entregado (201)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/traces",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "traces"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{employee2Token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"orderId\": {{efficiencyOrderB}},\n  \"clientId\": {{clientId}},\n  \"restaurantId\": {{restaurantId}},\n  \"employeeId\": {{employee2Id}},\n  \"previousStatus\": \"LISTO\",\n  \"newStatus\": \"ENTREGADO\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 201\", () => pm.response.to.have.status(201));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Tiempo de inicio y fin de cada pedido (200)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/traces/restaurants/{{restaurantId}}/orders",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "traces",
+                "restaurants",
+                "{{restaurantId}}",
+                "orders"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{ownerToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                  "const orders = pm.response.json();",
+                  "const find = (v) => orders.find((o) => o.orderId === Number(pm.collectionVariables.get(v)));",
+                  "const a = find(\"efficiencyOrderA\");",
+                  "const b = find(\"efficiencyOrderB\");",
+                  "pm.test(\"Aparecen los dos pedidos entregados\", () => { pm.expect(a).to.not.eql(undefined); pm.expect(b).to.not.eql(undefined); });",
+                  "pm.test(\"Cada pedido tiene inicio, fin y duracion (fin >= inicio)\", () => {",
+                  "    orders.forEach((o) => {",
+                  "        pm.expect(o.startDate).to.be.a(\"string\");",
+                  "        pm.expect(o.endDate).to.be.a(\"string\");",
+                  "        pm.expect(new Date(o.endDate) >= new Date(o.startDate)).to.eql(true);",
+                  "        pm.expect(o.durationSeconds).to.be.at.least(0);",
+                  "    });",
+                  "});",
+                  "pm.test(\"Cada pedido muestra el empleado que lo atendio\", () => {",
+                  "    pm.expect(a.employeeId).to.eql(Number(pm.collectionVariables.get(\"employeeId\")));",
+                  "    pm.expect(b.employeeId).to.eql(Number(pm.collectionVariables.get(\"employee2Id\")));",
+                  "});",
+                  "pm.test(\"El pedido A tardo mas que el B\", () => pm.expect(a.durationSeconds).to.be.above(b.durationSeconds));",
+                  "pm.test(\"El pedido que no ha terminado (EN_PREPARACION) no aparece\", () => pm.expect(find(\"orderId\")).to.eql(undefined));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Ranking de empleados por tiempo medio (200)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/traces/restaurants/{{restaurantId}}/employees/ranking",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "traces",
+                "restaurants",
+                "{{restaurantId}}",
+                "employees",
+                "ranking"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{ownerToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                  "const ranking = pm.response.json();",
+                  "pm.test(\"Posiciones 1, 2, ... ordenadas del mas rapido al mas lento\", () => {",
+                  "    ranking.forEach((r, i) => pm.expect(r.position).to.eql(i + 1));",
+                  "    for (let i = 1; i < ranking.length; i++) {",
+                  "        pm.expect(ranking[i].averageDurationMinutes).to.be.at.least(ranking[i - 1].averageDurationMinutes);",
+                  "    }",
+                  "});",
+                  "pm.test(\"El segundo empleado (pedido mas rapido) va primero\", () => {",
+                  "    pm.expect(ranking[0].employeeId).to.eql(Number(pm.collectionVariables.get(\"employee2Id\")));",
+                  "    pm.expect(ranking[1].employeeId).to.eql(Number(pm.collectionVariables.get(\"employeeId\")));",
+                  "    pm.expect(ranking[0].completedOrders).to.eql(1);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Otro propietario consulta la eficiencia (403)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/traces/restaurants/{{restaurantId}}/orders",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "traces",
+                "restaurants",
+                "{{restaurantId}}",
+                "orders"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{otherOwnerToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 403\", () => pm.response.to.have.status(403));",
+                  "pm.test(\"Mensaje: Solo el propietario del restaurante puede consultar la eficiencia de sus pedidos\", () => pm.expect(pm.response.json().message).to.eql(\"Solo el propietario del restaurante puede consultar la eficiencia de sus pedidos\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Otro propietario consulta el ranking (403)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/traces/restaurants/{{restaurantId}}/employees/ranking",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "traces",
+                "restaurants",
+                "{{restaurantId}}",
+                "employees",
+                "ranking"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{otherOwnerToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 403\", () => pm.response.to.have.status(403));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Restaurante inexistente (404)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/traces/restaurants/999999999/orders",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "traces",
+                "restaurants",
+                "999999999",
+                "orders"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{ownerToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 404\", () => pm.response.to.have.status(404));",
+                  "pm.test(\"Mensaje: No existe un restaurante con el id indicado\", () => pm.expect(pm.response.json().message).to.eql(\"No existe un restaurante con el id indicado\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Id no numerico (400)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/traces/restaurants/abc/employees/ranking",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "traces",
+                "restaurants",
+                "abc",
+                "employees",
+                "ranking"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{ownerToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 400\", () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "EMPLEADO intenta consultar (403)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/traces/restaurants/{{restaurantId}}/orders",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "traces",
+                "restaurants",
+                "{{restaurantId}}",
+                "orders"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{employeeToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 403\", () => pm.response.to.have.status(403));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "CLIENTE intenta consultar el ranking (403)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/traces/restaurants/{{restaurantId}}/employees/ranking",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "traces",
+                "restaurants",
+                "{{restaurantId}}",
+                "employees",
+                "ranking"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{clientToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 403\", () => pm.response.to.have.status(403));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "ADMIN intenta consultar (403)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/traces/restaurants/{{restaurantId}}/orders",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "traces",
+                "restaurants",
+                "{{restaurantId}}",
+                "orders"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 403\", () => pm.response.to.have.status(403));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Sin token (401)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/traces/restaurants/{{restaurantId}}/employees/ranking",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "traces",
+                "restaurants",
+                "{{restaurantId}}",
+                "employees",
+                "ranking"
+              ]
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 401\", () => pm.response.to.have.status(401));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
     }
   ],
   "variable": [
@@ -1618,6 +2711,46 @@
     },
     {
       "key": "manualOrderId",
+      "value": ""
+    },
+    {
+      "key": "employeeId",
+      "value": ""
+    },
+    {
+      "key": "employee2Document",
+      "value": ""
+    },
+    {
+      "key": "employee2Email",
+      "value": ""
+    },
+    {
+      "key": "employee2Token",
+      "value": ""
+    },
+    {
+      "key": "employee2Id",
+      "value": ""
+    },
+    {
+      "key": "otherOwnerDocument",
+      "value": ""
+    },
+    {
+      "key": "otherOwnerEmail",
+      "value": ""
+    },
+    {
+      "key": "otherOwnerToken",
+      "value": ""
+    },
+    {
+      "key": "efficiencyOrderA",
+      "value": ""
+    },
+    {
+      "key": "efficiencyOrderB",
       "value": ""
     }
   ]
