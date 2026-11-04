@@ -1,0 +1,18 @@
+server:
+  port: ${SERVER_PORT:8084}
+
+spring:
+  application:
+    name: plazoleta-trazabilidad
+  data:
+    mongodb:
+      uri: ${MONGODB_URI:mongodb://localhost:27018/plazoleta_trazabilidad}
+
+security:
+  jwt:
+    # Debe ser la misma clave que usa plazoleta-usuarios para firmar los tokens.
+    secret: ${JWT_SECRET:cGxhem9sZXRhLWRlLWNvbWlkYXMtc2VjcmV0by1zdXBlci1zZWd1cm8tMjU2LWJpdHM=}
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
