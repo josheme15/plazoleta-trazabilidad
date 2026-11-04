@@ -1,0 +1,18 @@
+# Todos los microservicios usan el proyecto "plazoleta" para agruparse en Docker Desktop.
+name: plazoleta
+
+services:
+  mongo-trazabilidad:
+    image: mongo:7
+    container_name: mongo-trazabilidad
+    environment:
+      MONGO_INITDB_DATABASE: plazoleta_trazabilidad
+    ports:
+      # 27018 en el equipo para no chocar con un MongoDB instalado localmente (puerto 27017).
+      - "27018:27017"
+    volumes:
+      - trazabilidad-data:/data/db
+
+volumes:
+  trazabilidad-data:
+    name: plazoleta-trazabilidad_trazabilidad-data
