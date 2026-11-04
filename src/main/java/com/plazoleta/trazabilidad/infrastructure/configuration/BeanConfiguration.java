@@ -59,7 +59,8 @@ public class BeanConfiguration {
     @Bean
     public IOrderEfficiencyServicePort orderEfficiencyServicePort(ITracePersistencePort tracePersistencePort,
                                                                   IAuthenticatedUserPort authenticatedUserPort,
-                                                                  IRestaurantClientPort restaurantClientPort) {
-        return new OrderEfficiencyUseCase(tracePersistencePort, authenticatedUserPort, restaurantClientPort);
+                                                                  IRestaurantClientPort restaurantClientPort,
+                                                                  Clock clock) {
+        return new OrderEfficiencyUseCase(tracePersistencePort, authenticatedUserPort, restaurantClientPort, clock);
     }
 }

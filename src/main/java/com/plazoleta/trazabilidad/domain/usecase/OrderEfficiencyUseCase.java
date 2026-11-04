@@ -12,6 +12,7 @@ import com.plazoleta.trazabilidad.domain.spi.IAuthenticatedUserPort;
 import com.plazoleta.trazabilidad.domain.spi.IRestaurantClientPort;
 import com.plazoleta.trazabilidad.domain.spi.ITracePersistencePort;
 
+import java.time.Clock;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -33,13 +34,17 @@ public class OrderEfficiencyUseCase implements IOrderEfficiencyServicePort {
     private final ITracePersistencePort tracePersistencePort;
     private final IAuthenticatedUserPort authenticatedUserPort;
     private final IRestaurantClientPort restaurantClientPort;
+    // Zona horaria en la que se registraron las fechas (la del Clock con el que TraceUseCase las genera).
+    private final Clock clock;
 
     public OrderEfficiencyUseCase(ITracePersistencePort tracePersistencePort,
                                   IAuthenticatedUserPort authenticatedUserPort,
-                                  IRestaurantClientPort restaurantClientPort) {
+                                  IRestaurantClientPort restaurantClientPort,
+                                  Clock clock) {
         this.tracePersistencePort = tracePersistencePort;
         this.authenticatedUserPort = authenticatedUserPort;
         this.restaurantClientPort = restaurantClientPort;
+        this.clock = clock;
     }
 
     @Override
@@ -103,7 +108,9 @@ public class OrderEfficiencyUseCase implements IOrderEfficiencyServicePort {
         }
         LocalDateTime startDate = start.get().getDate();
         LocalDateTime endDate = end.get().getDate();
-        long seconds = Duration.between(startDate, endDate).toSeconds();
+        // Se calcula con fechas con zona horaria para que un cambio de horario no altere la duracion.
+        long seconds = Duration.between(startDate.atZone(clock.getZone()), endDate.atZone(clock.getZone()))
+                .toSeconds();
         // El empleado que atendio el pedido es el que figura al entregarlo (el asignado).
         Long employeeId = end.get().getEmployeeId() != null ? end.get().getEmployeeId() : lastEmployee(traces);
         return Optional.of(new OrderEfficiency(orderId, employeeId, startDate, endDate, seconds, toMinutes(seconds)));
