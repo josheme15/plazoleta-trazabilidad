@@ -9,4 +9,6 @@ import java.util.List;
 public interface ITraceRepository extends MongoRepository<TraceDocument, String> {
 
     List<TraceDocument> findByOrderId(Long orderId, Sort sort);
+
+    List<TraceDocument> findByRestaurantId(Long restaurantId, Sort sort);
 }
