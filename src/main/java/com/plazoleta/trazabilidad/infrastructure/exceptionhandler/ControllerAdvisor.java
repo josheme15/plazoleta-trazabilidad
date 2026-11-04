@@ -1,9 +1,12 @@
 package com.plazoleta.trazabilidad.infrastructure.exceptionhandler;
 
 import com.plazoleta.trazabilidad.domain.exception.DomainException;
+import com.plazoleta.trazabilidad.domain.exception.NotRestaurantOwnerException;
 import com.plazoleta.trazabilidad.domain.exception.OrderFromAnotherClientException;
+import com.plazoleta.trazabilidad.domain.exception.RestaurantNotFoundException;
 import com.plazoleta.trazabilidad.domain.exception.TraceNotAllowedException;
 import com.plazoleta.trazabilidad.domain.exception.TraceNotFoundException;
+import com.plazoleta.trazabilidad.infrastructure.output.client.exception.PlazoletaServiceUnavailableException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -17,12 +20,13 @@ import java.util.List;
 @RestControllerAdvice
 public class ControllerAdvisor {
 
-    @ExceptionHandler(TraceNotFoundException.class)
+    @ExceptionHandler({TraceNotFoundException.class, RestaurantNotFoundException.class})
     public ResponseEntity<ErrorResponse> handleNotFound(DomainException ex) {
         return build(HttpStatus.NOT_FOUND, ex.getMessage());
     }
 
-    @ExceptionHandler({OrderFromAnotherClientException.class, TraceNotAllowedException.class})
+    @ExceptionHandler({OrderFromAnotherClientException.class, TraceNotAllowedException.class,
+            NotRestaurantOwnerException.class})
     public ResponseEntity<ErrorResponse> handleForbidden(DomainException ex) {
         return build(HttpStatus.FORBIDDEN, ex.getMessage());
     }
@@ -30,6 +34,11 @@ public class ControllerAdvisor {
     @ExceptionHandler(DomainException.class)
     public ResponseEntity<ErrorResponse> handleDomain(DomainException ex) {
         return build(HttpStatus.BAD_REQUEST, ex.getMessage());
+    }
+
+    @ExceptionHandler(PlazoletaServiceUnavailableException.class)
+    public ResponseEntity<ErrorResponse> handlePlazoletaUnavailable(PlazoletaServiceUnavailableException ex) {
+        return build(HttpStatus.SERVICE_UNAVAILABLE, ex.getMessage());
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)

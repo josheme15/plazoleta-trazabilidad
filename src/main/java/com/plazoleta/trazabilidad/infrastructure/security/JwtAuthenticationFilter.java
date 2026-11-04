@@ -31,13 +31,15 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                                     FilterChain filterChain) throws ServletException, IOException {
         String header = request.getHeader(HttpHeaders.AUTHORIZATION);
         if (header != null && header.startsWith(BEARER_PREFIX)) {
+            String token = header.substring(BEARER_PREFIX.length());
             try {
-                Claims claims = jwtService.parseClaims(header.substring(BEARER_PREFIX.length()));
+                Claims claims = jwtService.parseClaims(token);
                 String role = claims.get(JwtService.CLAIM_ROLE, String.class);
                 AuthenticatedUser principal = new AuthenticatedUser(claims.get(JwtService.CLAIM_USER_ID, Long.class),
                         role, claims.get(JwtService.CLAIM_RESTAURANT_ID, Long.class));
+                // El token se guarda como credencial para reenviarlo a plazoleta (HU-18).
                 var authentication = new UsernamePasswordAuthenticationToken(
-                        principal, null, List.of(new SimpleGrantedAuthority(ROLE_PREFIX + role)));
+                        principal, token, List.of(new SimpleGrantedAuthority(ROLE_PREFIX + role)));
                 SecurityContextHolder.getContext().setAuthentication(authentication);
             } catch (JwtException | IllegalArgumentException e) {
                 // Token invalido: el contexto queda sin autenticar y el entry point responde 401.

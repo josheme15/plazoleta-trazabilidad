@@ -30,6 +30,11 @@ public class TraceMongoAdapter implements ITracePersistencePort {
         return traceRepository.findByOrderId(orderId, CHRONOLOGICAL).stream().map(this::toTrace).toList();
     }
 
+    @Override
+    public List<Trace> findByRestaurantId(Long restaurantId) {
+        return traceRepository.findByRestaurantId(restaurantId, CHRONOLOGICAL).stream().map(this::toTrace).toList();
+    }
+
     private Trace toTrace(TraceDocument document) {
         return new Trace(document.getId(), document.getOrderId(), document.getClientId(), document.getRestaurantId(),
                 document.getEmployeeId(), document.getPreviousStatus(), document.getNewStatus(), document.getDate());

@@ -68,4 +68,17 @@ class TraceMongoAdapterTest {
         assertEquals(1, result.size());
         assertEquals(OrderStatus.PENDIENTE, result.get(0).getNewStatus());
     }
+
+    @Test
+    void findByRestaurantId_sortsByDateAndId() {
+        when(traceRepository.findByRestaurantId(eq(1L), any(Sort.class))).thenReturn(List.of(
+                new TraceDocument("1", 10L, 30L, 1L, 8L, OrderStatus.LISTO, OrderStatus.ENTREGADO, DATE)));
+
+        List<Trace> result = adapter.findByRestaurantId(1L);
+
+        ArgumentCaptor<Sort> sortCaptor = ArgumentCaptor.forClass(Sort.class);
+        verify(traceRepository).findByRestaurantId(eq(1L), sortCaptor.capture());
+        assertEquals(Sort.by(Sort.Order.asc("date"), Sort.Order.asc("id")), sortCaptor.getValue());
+        assertEquals(OrderStatus.ENTREGADO, result.get(0).getNewStatus());
+    }
 }

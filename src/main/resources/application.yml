@@ -8,6 +8,10 @@ spring:
     mongodb:
       uri: ${MONGODB_URI:mongodb://localhost:27018/plazoleta_trazabilidad}
 
+clients:
+  plazoleta:
+    url: ${PLAZOLETA_URL:http://localhost:8082}
+
 security:
   jwt:
     # Debe ser la misma clave que usa plazoleta-usuarios para firmar los tokens.

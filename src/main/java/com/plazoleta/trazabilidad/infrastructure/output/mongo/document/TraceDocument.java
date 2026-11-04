@@ -27,6 +27,7 @@ public class TraceDocument {
     @Indexed
     private Long clientId;
 
+    @Indexed
     private Long restaurantId;
     private Long employeeId;
     private OrderStatus previousStatus;
