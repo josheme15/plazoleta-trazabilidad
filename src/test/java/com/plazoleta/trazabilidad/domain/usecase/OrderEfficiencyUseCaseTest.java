@@ -13,11 +13,12 @@ import com.plazoleta.trazabilidad.domain.spi.ITracePersistencePort;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.time.Clock;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -50,7 +51,6 @@ class OrderEfficiencyUseCaseTest {
     @Mock
     private IRestaurantClientPort restaurantClientPort;
 
-    @InjectMocks
     private OrderEfficiencyUseCase useCase;
 
     private final List<Trace> traces = new ArrayList<>();
@@ -76,6 +76,8 @@ class OrderEfficiencyUseCaseTest {
     @BeforeEach
     void setUp() {
         traces.clear();
+        Clock bogota = Clock.system(ZoneId.of("America/Bogota"));
+        useCase = new OrderEfficiencyUseCase(tracePersistencePort, authenticatedUserPort, restaurantClientPort, bogota);
     }
 
     // ---------- tiempo de inicio y fin de cada pedido ----------
@@ -232,5 +234,23 @@ class OrderEfficiencyUseCaseTest {
     void withNullRestaurantId_throwsException() {
         assertThrows(RequiredFieldException.class, () -> useCase.getRestaurantOrdersEfficiency(null));
         verify(restaurantClientPort, never()).findRestaurantOwnerId(any());
+    }
+
+    @Test
+    void durationIsComputedWithTheTimeZone_soDaylightSavingChangesAreRespected() {
+        // En Nueva York, el 2026-03-08 a las 02:00 el reloj salta a las 03:00: de 01:30 a 03:30 pasa 1 hora real.
+        useCase = new OrderEfficiencyUseCase(tracePersistencePort, authenticatedUserPort, restaurantClientPort,
+                Clock.system(ZoneId.of("America/New_York")));
+        givenOwner();
+        LocalDateTime start = LocalDateTime.of(2026, 3, 8, 1, 30);
+        traces.add(new Trace("1", 10L, CLIENT_ID, RESTAURANT_ID, null, null, OrderStatus.PENDIENTE, start));
+        traces.add(new Trace("2", 10L, CLIENT_ID, RESTAURANT_ID, EMPLOYEE_A, OrderStatus.LISTO, OrderStatus.ENTREGADO,
+                start.plusHours(2)));
+        when(tracePersistencePort.findByRestaurantId(RESTAURANT_ID)).thenReturn(traces);
+
+        OrderEfficiency result = useCase.getRestaurantOrdersEfficiency(RESTAURANT_ID).get(0);
+
+        assertEquals(3600, result.durationSeconds());
+        assertEquals(60.0, result.durationMinutes());
     }
 }
